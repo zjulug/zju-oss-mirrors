@@ -54,7 +54,7 @@ BASEETCDIR=${BASEETCDIR:-"`pwd`/../etc"}
 VERSION="20130605"
 
 # Source our common functions
-. "${BASEETCDIR}/common"
+. "${BASEBINDIR}/common"
 
 ########################################################################
 ########################################################################
