@@ -1,0 +1,138 @@
+#! /bin/bash
+
+# Simple rsync script with mail notification inspired by and derived from ftpsync.
+# Copyright (C) 2013  Hexcles Ma (http://blog.robotshell.org/)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# This script is designed to be used in the ZJU OSS Mirror site.
+# Thus it might not be very generic, with some hard-coding configurations.
+
+BASEBINDIR=${BASEBINDIR:-"`pwd`"}
+BASEETCDIR=${BASEETCDIR:-"`pwd`/../etc"}
+
+# Deal with command line parameters.
+# Currently we only accept one argument: "repo:*"
+# ATTENTION: There is no security check!
+if [[ $1 = repo:* ]]; then
+	REPO=${1##repo:}
+else
+	echo "Usage: $0 repo:REPONAME"
+	exit 1
+fi
+
+# Default settings
+HOSTNAME=`hostname -f`
+LOGROTATE=${LOGROTATE:-14}
+MAILTO=${MAILTO:-"mirror"}
+NAME="$(basename $0)"
+PROGRAM=${PROGRAM:-"${NAME}-$(hostname -s)"}
+SIMPLE_RSYNC_OPTIONS=${SIMPLE_RSYNC_OPTIONS:-"-avH --delete-after --delay-updates"}
+
+LOGDIR=${LOGDIR:-"${HOME}/log/${REPO}"}
+LOGFILE=${LOGFILE:-"${LOGDIR}/${NAME}.log"}
+
+REPODIR=${REPODIR:-"${HOME}/root/${REPO}"}
+LOCKFILE="${REPODIR}/Archive-Update-in-Progress-${HOSTNAME}"
+
+# Import common functions (from ftpsync project)
+# Currently we only use log() savelog() error()
+. "${BASEBINDIR}/common"
+
+# Override the settings
+
+# Source the global config
+if [ -f "${BASEETCDIR}/global.conf" ]; then
+	. "${BASEETCDIR}/global.conf"
+fi
+
+# Set remote repo address
+. "${BASEETCDIR}/${REPO}.conf"
+
+# Did not specify remote repo address
+if [ -z "${RSYNC_ADDR}" ]; then
+	error "Missing a remote address to mirror from, please set RSYNC_ADDR variable in etc/${REPO}.conf"
+fi
+
+# All the stuff we want to do when we exit, no matter where
+cleanup() {
+	trap - ERR TERM HUP INT QUIT EXIT
+	# all done. Mail the log, exit.
+	log "Mirrorsync done";
+
+	# Lets get a statistical value
+	SPEED="unknown"
+	if [ -f "${LOGDIR}/rsync-${NAME}.log" ]; then
+		SPEED=$(
+		SPEEDLINE=$(egrep '[0-9.]+ bytes/sec' "${LOGDIR}/rsync-${NAME}.log")
+		set "nothing" ${SPEEDLINE}
+		echo ${8:-""}
+		)
+		if [ -n "${SPEED}" ]; then
+			SPEED=${SPEED%%.*}
+			SPEED=$(( $SPEED / 1024 ))
+		fi
+	fi
+	log "Rsync transfer speed: ${SPEED} KB/s"
+
+	if [ -n "${MAILTO}" ]; then
+		# In case rsync had something on stderr
+		if [ -s "${LOGDIR}/rsync-${NAME}.error" ]; then
+			mail -e -s "[${PROGRAM}@$(hostname -s)] ($$) rsync ERROR on $(date +"%Y.%m.%d-%H:%M:%S")" ${MAILTO} < "${LOGDIR}/rsync-${NAME}.error"
+		fi
+		if [ "x${ERRORSONLY}x" = "xfalsex" ]; then
+			# And the normal log
+			MAILFILES="${LOGFILE}"
+			if [ "x${FULLLOGS}x" = "xtruex" ]; then
+				# Someone wants full logs including rsync
+				MAILFILES="${MAILFILES} ${LOGDIR}/rsync-${NAME}.log"
+			fi
+			cat ${MAILFILES} | mail -e -s "[${PROGRAM}@$(hostname -s)] archive sync finished on $(date +"%Y.%m.%d-%H:%M:%S")" ${MAILTO}
+		fi
+	fi
+
+	savelog "${LOGDIR}/rsync-${NAME}.log"
+	savelog "${LOGDIR}/rsync-${NAME}.error"
+	savelog "${LOGFILE}"
+
+	rm -f "${LOCKFILE}"
+}
+
+# Check to see if another sync is in progress (if not, create LOCKFILE)
+if ! ( set -o noclobber; echo "$$" > "${LOCKFILE}") 2> /dev/null; then
+	if ! $(kill -0 $(< ${LOCKFILE}) 2>/dev/null); then
+		# Process does either not exist (already exit abnormaly) or is not owned by us.
+		# Update the LOCKFILE
+		echo "$$" > "${LOCKFILE}"
+	else
+		echo "Unable to start rsync, lock file still exists, PID $(< ${LOCKFILE})"
+		exit 1
+	fi
+fi
+
+# When we exit normally we call cleanup on our own. Otherwise we want it called by
+# this trap.  (We can not trap on EXIT, because that is called when the main script
+# exits. Which also happens when we background the mainroutine, ie. while we still
+# run!)
+trap cleanup ERR TERM HUP INT QUIT
+
+# Start log by redirecting stdout and stderr there and closing stdin
+exec >"${LOGFILE}" 2>&1 <&-
+log "Mirrorsync start"
+
+rsync ${SIMPLE_RSYNC_OPTIONS} --exclude=${LOCKFILE} ${RSYNC_ADDR} ${REPODIR}
+
+# All done, lets call cleanup
+cleanup

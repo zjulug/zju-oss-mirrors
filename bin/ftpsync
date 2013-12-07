@@ -219,6 +219,11 @@ if [ -n "${ARCHIVE}" ]; then
     NAME="${NAME}-${ARCHIVE}"
 fi
 
+# Source the global config
+if [ -f "${BASEETCDIR}/global.conf" ]; then
+	. "${BASEETCDIR}/global.conf"
+fi
+
 # Now source the config for the archive we run on.
 # (Yes, people can also overwrite the options above in the config file
 # if they want to)
