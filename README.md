@@ -4,7 +4,9 @@
 
 Scripts used in http://mirrors.zju.edu.cn .
 
-These scripts are forked from Tsinghua University Network 
+Some scripts are derived from Debian Project.
+
+Other scripts are forked from Tsinghua University Network 
 Administrators ( http://git.tuna.tsinghua.edu.cn/ ), originally 
 used in [Tsinghua Open Source Software Mirror Sites](http://mirrors.tuna.tsinghua.edu.cn).
 
