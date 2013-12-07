@@ -17,6 +17,26 @@ thus licensed under GPLv2. Other scripts with no license headers
 are all free softwares as well, waiting for the owners to choose 
 specific licenses.
 
+## Structure
+
+	+- bin
+	|  |
+	|  +-- ftpsync		(modified from Debian)
+	|  |
+	|  +-- runmirrors	(modified from Debian, used to push notifications to downstream)
+	|  |
+	|  +-- simplersync	(simple rsync scripts for other repos, derived from ftpsync)
+	|  |
+	|  +-- updatecron	(simple scripts to update crontab)
+	|
+	+- etc
+	|  |
+	|  +-- global.conf	(global config file)
+	|  |
+	|  +-- REPO.conf	(per repo config file)
+	|  |
+	|  +-- crontab		(crontab)
+
 ## Current Status
 
 ### ftpsync
@@ -28,3 +48,4 @@ __runmirrors__ has not been tested! Push function might be broken!
 ### simplersync
 
 Simple rsync scripts written by myself, used in non-Debian repos.
+
