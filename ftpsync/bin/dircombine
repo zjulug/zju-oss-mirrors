@@ -1,0 +1,62 @@
+#!/usr/bin/perl
+# Uses symlinks to merge the files contained in a set of vcs
+# checkouts to into a single directory. Keeps track of when files are
+# removed from the merged directories and removes the symlinks.
+#
+# Only merges files that match the specified pattern.
+#
+# Note that the directories given to merge should be paths that will work
+# for symlink targets from the destination directory (so either full paths,
+# or they should be right inside the destination directory).
+#
+# Note that other files in the destination directory will be left as-is.
+#
+# Copyright 2006 by Joey Hess, licensed under the GPL.
+
+if (! @ARGV) {
+	die "usage: dircombine include-pattern dest dir1 [dir2 ...]\n";
+}
+
+my $pattern=shift;
+my $dest=shift;
+
+foreach my $dir (@ARGV) {
+	my %known;
+
+	# Link in each thing from the dir.
+	opendir(DIR, $dir) || die "opendir: $!";
+	while ($_=readdir(DIR)) {
+		next if $_ eq '.' || $_ eq '..' || $_ eq 'known' || $_ eq '.svn' || $_ eq '.git' || $_ eq '.gitignore' || $_ eq '_darcs';
+		next unless /$pattern/;
+		
+		$known{$_}=1;
+		
+		if (! -l "$dest/$_" && -e "$dest/$_") {
+			print STDERR "$_ in $dir is also in $dest\n";
+		}
+		elsif (! -l "$dest/$_") {
+			system("ln", "-svf", "$dir/$_", $dest);
+		}
+	}
+	closedir(DIR);
+
+	# Remove anything that was previously linked in but is not in the
+	# dir anymore.
+	if (-e "$dir/known") {
+		open(KNOWN, "$dir/known") || die "open $dir/known: $!";
+		while (<KNOWN>) {
+			chomp;
+			if (! $known{$_}) {
+				system("rm", "-vf", "$dest/$_");
+			}
+		}
+		close KNOWN;
+	}
+
+	# Save state for next time.
+	open(KNOWN, ">$dir/known") || die "write $dir/known: $!";
+	foreach my $file (sort keys %known) {
+		print KNOWN "$file\n";
+	}
+	close KNOWN;
+}

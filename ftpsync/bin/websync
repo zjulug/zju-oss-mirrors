@@ -1,0 +1,304 @@
+#! /bin/bash
+# No, we can not deal with sh alone.
+
+set -e
+set -u
+# ERR traps should be inherited from functions too. (And command
+# substitutions and subshells and whatnot, but for us the function is
+# the important part here)
+set -E
+
+# websync script for Debian
+# Based losely on the old websync written by an
+# unknown number of different people over the years and ftpsync.
+#
+# Copyright (C) 2008,2009 Joerg Jaspert <joerg@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; version 2.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+# In case the admin somehow wants to have this script located someplace else,
+# he can set BASEDIR, and we will take that. If it is unset we take ${HOME}
+# How the admin sets this isn't our place to deal with. One could use a wrapper
+# for that. Or pam_env. Or whatever fits in the local setup. :)
+BASEDIR=${BASEDIR:-"${HOME}"}
+
+# Script version. DO NOT CHANGE, *unless* you change the master copy maintained
+# by Joerg Jaspert and the Debian mirroradm group.
+# This is used to track which mirror is using which script version.
+VERSION="0815"
+
+# Source our common functions
+. "${BASEDIR}/etc/common"
+
+########################################################################
+########################################################################
+## functions                                                          ##
+########################################################################
+########################################################################
+# All the stuff we want to do when we exit, no matter where
+cleanup() {
+    trap - ERR TERM HUP INT QUIT EXIT
+    # all done. Mail the log, exit.
+    log "Mirrorsync done";
+    if [ -n "${MAILTO}" ]; then
+        # In case rsync had something on stderr
+        if [ -s "${LOGDIR}/rsync-${NAME}.error" ]; then
+            mail -e -s "[${PROGRAM}@$(hostname -s)] ($$) rsync ERROR on $(date +"%Y.%m.%d-%H:%M:%S")" ${MAILTO} < "${LOGDIR}/rsync-${NAME}.error"
+        fi
+        if [ "x${ERRORSONLY}x" = "xfalsex" ]; then
+            # And the normal log
+            MAILFILES="${LOG}"
+            if [ "x${FULLLOGS}x" = "xtruex" ]; then
+                # Someone wants full logs including rsync
+                MAILFILES="${MAILFILES} ${LOGDIR}/rsync-${NAME}.log"
+            fi
+            cat ${MAILFILES} | mail -e -s "[${PROGRAM}@$(hostname -s)] web sync finished on $(date +"%Y.%m.%d-%H:%M:%S")" ${MAILTO}
+        fi
+    fi
+
+    savelog "${LOGDIR}/rsync-${NAME}.log"
+    savelog "${LOGDIR}/rsync-${NAME}.error"
+    savelog "$LOG" > /dev/null
+
+    rm -f "${LOCK}"
+}
+
+
+# Check rsyncs return value
+check_rsync() {
+
+    ret=$1
+    msg=$2
+
+    # 24 - vanished source files. Ignored, that should be the target of $UPDATEREQUIRED
+    # and us re-running. If it's not, uplink is broken anyways.
+    case "${ret}" in
+        0) return 0;;
+        24) return 0;;
+        23) return 2;;
+        30) return 2;;
+        *)
+            error "ERROR: ${msg}"
+            return 1
+            ;;
+    esac
+}
+
+########################################################################
+########################################################################
+
+# As what are we called?
+NAME="`basename $0`"
+
+# Now source the config.
+. "${BASEDIR}/etc/${NAME}.conf"
+
+########################################################################
+# Config options go here. Feel free to overwrite them in the config    #
+# file if you need to.                                                 #
+# On debian.org machines the defaults should be ok.                    #
+########################################################################
+
+########################################################################
+# There should be nothing to edit here, use the config file            #
+########################################################################
+MIRRORNAME=${MIRRORNAME:-`hostname -f`}
+# Where to put logfiles in
+LOGDIR=${LOGDIR:-"${BASEDIR}/log"}
+# Our own logfile
+LOG=${LOG:-"${LOGDIR}/${NAME}.log"}
+
+# Where should we put all the mirrored files?
+TO=${TO:-"/org/www.debian.org/www"}
+
+# used by log() and error()
+PROGRAM=${PROGRAM:-"${NAME}-$(hostname -s)"}
+
+# Where to send mails about mirroring to?
+if [ "x$(hostname -d)x" != "xdebian.orgx" ]; then
+    # We are not on a debian.org host
+    MAILTO=${MAILTO:-"root"}
+else
+    # Yay, on a .debian.org host
+    MAILTO=${MAILTO:-"mirrorlogs@debian.org"}
+fi
+# Want errors only or every log?
+ERRORSONLY=${ERRORSONLY:-"true"}
+# Want full logs, ie. including the rsync one?
+FULLLOGS=${FULLLOGS:-"false"}
+
+# How many logfiles to keep
+LOGROTATE=${LOGROTATE:-14}
+
+# Our lockfile
+LOCK=${LOCK:-"${TO}/Website-Update-in-Progress-${MIRRORNAME}"}
+# Do we need another rsync run?
+UPDATEREQUIRED="${TO}/Website-Update-Required-${MIRRORNAME}"
+# Trace file for mirror stats and checks (make sure we get full hostname)
+TRACE=${TRACE:-".project/trace/${MIRRORNAME}"}
+
+# rsync program
+RSYNC=${RSYNC:-rsync}
+# Rsync filter rules. Used to protect various files we always want to keep, even if we otherwise delete
+# excluded files
+RSYNC_FILTER=${RSYNC_FILTER:-"--filter=protect_Website-Update-in-Progress-${MIRRORNAME} --filter=protect_${TRACE} --filter=protect_Website-Update-Required-${MIRRORNAME}"}
+# Default rsync options for *every* rsync call
+RSYNC_OPTIONS=${RSYNC_OPTIONS:-"-prltvHSB8192 --timeout 3600 --stats ${RSYNC_FILTER}"}
+RSYNC_OPTIONS2=${RSYNC_OPTIONS2:-"--max-delete=40000 --delay-updates --delete --delete-after --delete-excluded"}
+# Which rsync share to use on our upstream mirror?
+RSYNC_PATH=${RSYNC_PATH:-"web.debian.org"}
+
+# our username for the rsync share
+RSYNC_USER=${RSYNC_USER:-""}
+# the password
+RSYNC_PASSWORD=${RSYNC_PASSWORD:-""}
+
+# a possible proxy
+RSYNC_PROXY=${RSYNC_PROXY:-""}
+
+# General excludes.
+EXCLUDE=${EXCLUDE:-"--exclude ${HOSTNAME}"}
+
+# The temp directory used by rsync --delay-updates is not
+# world-readable remotely. Always exclude it to avoid errors.
+EXCLUDE="${EXCLUDE} --exclude .~tmp~/"
+
+# And site specific excludes, by default its the sponsor stuff that should be local to all (except templates)
+SITE_FILTER=${SITE_FILTER:-"--include sponsor.deb.* --exclude sponsor_img.* --exclude sponsor.html --exclude sponsor.*.html --filter=protect_sponsor_img.* --filter=protect_sponsor.html --filter=protect_sponsor.*.html"}
+
+# Hooks
+HOOK1=${HOOK1:-""}
+HOOK2=${HOOK2:-""}
+HOOK3=${HOOK3:-""}
+HOOK4=${HOOK4:-""}
+
+# Are we a hub?
+HUB=${HUB:-"false"}
+
+# Some sane defaults
+cd "${BASEDIR}"
+umask 022
+
+# If we are here for the first time, create the
+# destination and the trace directory
+mkdir -p "${TO}/.project/trace"
+
+# Used to make sure we will have the archive fully and completly synced before
+# we stop, even if we get multiple pushes while this script is running.
+# Otherwise we can end up with a half-synced archive:
+# - get a push
+# - sync, while locked
+# - get another push. Of course no extra sync run then happens, we are locked.
+# - done. Archive not correctly synced, we don't have all the changes from the second push.
+touch "${UPDATEREQUIRED}"
+
+# Check to see if another sync is in progress
+if ! ( set -o noclobber; echo "$$" > "${LOCK}") 2> /dev/null; then
+    if ! $(kill -0 $(cat ${LOCK}) 2>/dev/null); then
+        # Process does either not exist or is not owned by us.
+        echo "$$" > "${LOCK}"
+    else
+        echo "Unable to start rsync, lock file still exists, PID $(cat ${LOCK})"
+        exit 1
+    fi
+fi
+
+trap cleanup EXIT ERR TERM HUP INT QUIT
+
+# Start log by redirecting everything there.
+exec >"$LOG" 2>&1 </dev/null
+
+# Look who pushed us and note that in the log.
+log "Mirrorsync start"
+PUSHFROM="${SSH_CONNECTION%%\ *}"
+if [ -n "${PUSHFROM}" ]; then
+    log "We got pushed from ${PUSHFROM}"
+fi
+log "Acquired main lock"
+
+HOOK=(
+    HOOKNR=1
+    HOOKSCR=${HOOK1}
+)
+hook $HOOK
+
+# Now, we might want to sync from anonymous too.
+# This is that deep in this script so hook1 could, if wanted, change things!
+if [ -z ${RSYNC_USER} ]; then
+    RSYNCPTH="${RSYNC_HOST}"
+else
+    RSYNCPTH="${RSYNC_USER}@${RSYNC_HOST}"
+fi
+
+# Now do the actual mirroring, and run as long as we have an updaterequired file.
+export RSYNC_PASSWORD
+export RSYNC_PROXY
+
+while [ -e "${UPDATEREQUIRED}" ]; do
+    log "Running mirrorsync, update is required, ${UPDATEREQUIRED} exists"
+
+    rm -f "${UPDATEREQUIRED}"
+    log "Syncing: ${RSYNC} ${RSYNC_OPTIONS} ${RSYNC_OPTIONS2} ${EXCLUDE} ${SITE_FILTER}  ${RSYNCPTH}::${RSYNC_PATH} ${TO}"
+
+    set +e
+    ${RSYNC} ${RSYNC_OPTIONS} ${RSYNC_OPTIONS2} ${EXCLUDE} ${SITE_FILTER} \
+        ${RSYNCPTH}::${RSYNC_PATH} "${TO}" >"${LOGDIR}/rsync-${NAME}.log" 2>"${LOGDIR}/rsync-${NAME}.error"
+    result=$?
+    set -e
+
+    log "Back from rsync with returncode ${result}"
+
+    set +e
+    check_rsync $result "Sync went wrong, got errorcode ${result}. Logfile: ${LOG}"
+    GO=$?
+    set -e
+
+    if [ ${GO} -eq 2 ] && [ -e "${UPDATEREQUIRED}" ]; then
+        log "We got error ${result} from rsync, but a second push went in hence ignoring this error for now"
+    elif [ ${GO} -ne 0 ]; then
+        exit 3
+    fi
+
+    HOOK=(
+        HOOKNR=2
+        HOOKSCR=${HOOK2}
+    )
+    hook $HOOK
+
+done
+
+mkdir -p "${TO}/.project/trace"
+LC_ALL=POSIX LANG=POSIX date -u > "${TO}/${TRACE}"
+echo "Used websync version: ${VERSION}" >> "${TO}/${TRACE}"
+echo "Running on host: $(hostname -f)" >> "${TO}/${TRACE}"
+
+HOOK=(
+    HOOKNR=3
+    HOOKSCR=${HOOK3}
+)
+hook $HOOK
+
+if [ x${HUB} = "xtrue" ]; then
+    log "Trigger slave mirrors"
+    ${BASEDIR}/bin/runmirrors "websync"
+    log "Trigger slave done"
+
+    HOOK=(
+        HOOKNR=4
+        HOOKSCR=${HOOK4}
+    )
+    hook $HOOK
+fi
+
+# All done, rest is done by cleanup hook.

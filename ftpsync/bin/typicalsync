@@ -1,0 +1,168 @@
+#!/usr/bin/perl -wT
+
+# Copyright (c) 2006 Anthony Towns <ajt@debian.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+use strict;
+use Fcntl ':flock';
+use File::Find;
+use POSIX qw(strftime);
+
+# configuration:
+
+my $local_dir  = "/srv/ftp.debian.org/mirror";
+my $rsync_host = undef; #"merkel.debian.org";
+my $rsync_dir  = undef; #"debian";
+
+my $dest       = "/srv/ftp.debian.org/rsync/typical";
+my $max_del    = 1000;
+
+$ENV{"PATH"} = "/bin:/usr/bin";
+
+# program
+
+my $hostname = `/bin/hostname -f`; 
+die "bad hostname" unless $hostname =~ m/^([a-zA-Z0-9._-]+)/;
+$hostname = $1;
+
+my $lockfile = "./Archive-Update-in-Progress-$hostname";
+
+unless (open LKFILE, "> $dest/$lockfile" and flock(LKFILE, LOCK_EX)) {
+    print "$hostname is unable to start sync, lock file exists\n";
+    exit(1);
+}
+
+if (defined $rsync_host && defined $rsync_dir) {
+    system("rsync --links --hard-links --times --verbose --recursive"
+           ." --delay-updates --files-from :indices/files/typical.files"
+	   ." rsync://$rsync_host/$rsync_dir/ $dest/");
+} else {
+    open FILELIST, "< $local_dir/indices/files/typical.files"
+        or die "typical.files index not found";
+    while (<FILELIST>) {
+        chomp;
+        m/^(.*)$/; $_ = $1;
+	my @l = lstat("$local_dir/$_");
+	next unless (@l);
+
+	if (-l _) {
+	    my $lpath = readlink("$local_dir/$_");
+	    $lpath =~ m/^(.*)$/; $lpath = $1;
+	    if (-l "$dest/$_") {
+		next if ($lpath eq readlink("$dest/$_"));
+	    }
+
+            unless (mk_dirname_as_dirs($dest, $_)) {
+	        print "E: couldn't create path for $_\n";
+	        next;
+	    }
+
+	    if (-d "$dest/$_") {
+	        rename "$dest/$_", "$dest/$_.remove" or print "E: couldn't rename old dir $_ out of the way\n";
+	    } elsif (-e "$dest/$_") {
+	        unlink("$dest/$_") or print "E: couldn't unlink $_\n";
+	    }
+            symlink($lpath, "$dest/$_") or print "E: couldn't create $_ as symlink to $lpath\n";
+	    next;
+	}
+
+        next if (-d _);
+
+	unless (mk_dirname_as_dirs($dest, $_)) {
+	    print "E: couldn't create path for $_\n";
+	    next;
+	}
+
+	my @d = lstat("$dest/$_");
+	if (@d) {
+            if (-d _) {
+                rename("$dest/$_", "$dest/$_.remove") or print "E: couldn't rename old dir $_ out of the way\n";
+            } else {
+	        next if (@l and @d and $l[0] == $d[0] and $l[1] == $d[1]);
+	        #next if (@l and @d and $l[7] == $d[7]);
+                print "I: updating $_\n";
+                unlink("$dest/$_");
+            }
+	}
+
+        link("$local_dir/$_", "$dest/$_") or print "E: couldn't link $_\n";
+    }
+    close(FILELIST);
+}
+
+print "Files synced, now deleting any unnecessary files\n";
+
+my %expected_files = ();
+open FILES, "< $dest/indices/files/typical.files" 
+    or die "typical.files index not found";
+while (<FILES>) {
+    chomp;
+    $expected_files{$_} = 1;
+}
+close(FILES);
+
+chdir($dest);
+
+my $del_count = 0;
+my $last = '';
+finddepth({wanted => \&wanted, no_chdir => 1}, ".");
+
+open TRACE, "> $dest/project/trace/$hostname" or die "couldn't open trace";
+print TRACE strftime("%a %b %e %H:%M:%S UTC %Y", gmtime) . "\n";
+close TRACE;
+
+close LKFILE;
+unlink("$dest/$lockfile");
+exit(0);
+
+sub wanted  {
+    my ($dev,$ino,$mode,$nlink,$uid,$gid) = lstat($_);
+    if (-d _) {
+        if (substr($last, 0, length($_) + 1) ne "$_/") {
+	    print "Deleting empty directory: $_\n";
+	    $_ = m/^(.*)$/;
+	    my $f = $1;
+            rmdir($f);
+	} else {
+	    $last = $_;
+	}
+    } elsif ($_ =~ m|^\./project/trace/| or $_ eq $lockfile) {
+	$last = $_;
+    } elsif (defined $expected_files{$_}) {
+        $last = $_;
+    } elsif ($del_count < $max_del) {
+        $del_count++;
+        print "Deleting file: $_\n";
+	$_ = m/^(.*)$/;
+	my $f = $1;
+	unlink($f);
+    }
+}
+
+sub mk_dirname_as_dirs {
+    my ($base, $file) = @_;
+    while ($file =~ m,^/*([^/]+)/+([^/].*)$,) {
+        $file = $2;
+	$base = "$base/$1";
+        my @blah = lstat($base);
+	if (!@blah) {
+	    mkdir($base, 0777);
+	} elsif (-l _ or ! -d _) {
+	    print "SHOULD BE A DIRECTORY: $base\n";
+	    unlink($base);
+	    mkdir($base, 0777);
+	}
+    }
+    1;
+}
+
+

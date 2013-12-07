@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+unset LC_CTYPE
+LANG=C
+HOST=`hostname -f`
+
+cd ${HOME}/archvsync
+git pull
+
+cd ${HOME}
+~/archvsync/bin/dircombine . . archvsync/ >/dev/null 2>&1

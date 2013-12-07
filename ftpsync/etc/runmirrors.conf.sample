@@ -1,0 +1,53 @@
+########################################################################
+########################################################################
+## This is a sample configuration file for the runmirror script.      ##
+## Most of the values are commented out and just shown here for       ##
+## completeness, together with their default value.                   ##
+########################################################################
+########################################################################
+
+## Which ssh key to use?
+#KEYFILE=.ssh/pushmirror
+
+## The directory for our logfiles
+#LOGDIR="${BASEDIR}/log"
+
+## Our own logfile
+#LOG="${LOGDIR}/${NAME}.log"
+
+## Our lockfile directory
+#LOCKDIR="${BASEDIR}/locks"
+
+## We do create a logfile for every run. To save space we rotate it, this
+## defines how many we keep
+#LOGROTATE=14
+
+## Our mirrorfile
+#MIRRORS="${BASEDIR}/etc/${NAME}.mirror"
+
+## extra ssh options we might want. *hostwide*
+## By default, ignore ssh key change of leafs
+#SSH_OPTS="-o StrictHostKeyChecking=no"
+
+## The script can send logs (or error messages) to a mail address.
+## If this is unset it will default to the local root user unless it is run
+## on a .debian.org machine where it will default to the mirroradm people.
+#MAILTO="root"
+
+## Whats our archive name? We will also tell our leafs about it
+## This is usually empty, but if we are called as "runmirrors bpo"
+## it will default to bpo. This way one runmirrors script can serve
+## multiple archives, similar to what ftpsync does.
+#PUSHARCHIVE="${CONF}"
+
+## How long to wait for mirrors to do stage1 if we have multi-stage syncing
+#PUSHDELAY=600
+
+## Hook scripts can be run at various places.
+## Leave them blank/commented out if you don't want any
+## Hook1: After reading config, before doing the first real action
+## Hook2: Between two hosts to push
+## Hook3: When everything is done
+#HOOK1=""
+#HOOK2=""
+#HOOK3=""

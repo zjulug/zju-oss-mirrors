@@ -1,0 +1,72 @@
+# Definition of mirror hosts we push.
+# One mirror per line, with the following fields defined.
+#
+# Type ShortName HostName User SSHProtocol SSHKeyFile
+#
+# ALTERNATIVELY the line may look like
+#
+# Type ShortName HostName User -$SOMESSHOPTION
+#
+# The fields Type, ShortName, HostName and User are *mandantory*.
+#
+# Type is either all, staged or mhop, meaning:
+# all    - do a "normal" push. Trigger them, go on.
+# staged - do a two-stage push, waiting for them after stage 2(and all others that
+#          are staged) before doing stage2
+# mhop   - send a multi-hop staged push. This will tell the mirror to initiate
+#          a mhop/stage1 push to its staged/mhop mirrors and then exit.
+#          When all mhop got back we then send the stage2 through to them.
+#
+# ShortName will be used as a shorthand in logfile outputs and for the logfile
+# where every ssh output gets redirected to.
+#
+# If no SSHKeyFile is given, the default from the config file applies.
+# If SSHProtocol is empty, it will default to 2, but if you want to
+#                define a keyfile you HAVE TO set protocol too!
+#
+# With the ALTERNATIVE syntax you are able to use any special ssh option
+# you want just for one special mirror. The option after the username
+# then MUST start with a -, in which case the whole rest of the line is taken
+# as a set of options to give to ssh, it is passed through without doing
+# anything with it.
+#
+# There is one caveat here: Should you want to use the -i option to give
+# another ssh key to use, keep in mind that the master keyfile will
+# always be presented too! That is, ssh will show both keys to the other
+# side and the first one presented wins. Which might not be the key you
+# want. There is currently no way around this, as that would mean
+# dropping backward compatibility.
+#
+# Backwards compatibility:
+# An older runmirrors script will NOT run with a newer runmirrors.mirror file, but
+# a new runmirrors can run with an old runmirrors.mirror file. This should make updates
+# painless.
+#
+# Examples:
+# all eu.puccini puccini.debian.org archvsync 2
+#
+# -> will push puccini.debian.org, user archvsync, using ssh protocol 2
+#    and the globally configured ssh key.
+#
+# all eu.puccini puccini.debian.org archvsync -p 2222
+#
+# -> will do the same as above, but use port 2222 to connect to.
+#
+# staged eu.puccini puccini.debian.org archvsync
+# staged eu.powell powell.debian.org archvsync
+#
+# -> will push both puccini and powell in stage1, waiting for both to
+#    finish stage1 before stage2 gets pushed. The username will be archvsync.
+#
+# staged eu.puccini puccini.debian.org archvsync
+# mhop eu.powell powell.debian.org archvsync
+#
+# -> will do the same as above, but powell gets told about mhop and can then
+#    push its own staged/mhop mirrors before returning. When both returned
+#    then stage2 is sent to both.
+#
+# One special value is allowed: DELAY
+# This word has to be on a line itself, followed by a space and a number.
+# nothing else, not even whitespace. It will trigger a pause of $number
+# seconds between the two mirrors. If no number is given it defaults to
+# 600 seconds.

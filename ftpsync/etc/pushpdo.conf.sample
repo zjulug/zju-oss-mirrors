@@ -1,0 +1,40 @@
+########################################################################
+########################################################################
+## This is a sample configuration file for the runmirror script.      ##
+## Most of the values are commented out and just shown here for       ##
+## completeness, together with their default value.                   ##
+########################################################################
+########################################################################
+
+## Which ssh key to use?
+#KEYFILE=.ssh/pushmirror
+
+## The directory for our logfiles
+#LOGDIR="${BASEDIR}/log"
+
+## Our own logfile
+#LOG="${LOGDIR}/${NAME}.log"
+
+## Our lockfile directory
+#LOCKDIR="${BASEDIR}/locks"
+
+## We do create a logfile for every run. To save space we rotate it, this
+## defines how many we keep
+#LOGROTATE=14
+
+## Our mirrorfile
+#MIRRORS="${BASEDIR}/etc/${NAME}.mirror"
+
+## extra ssh options we might want. *hostwide*
+#SSH_OPTS=""
+
+## The script can send logs (or error messages) to a mail address.
+## If this is unset it will default to the local root user unless it is run
+## on a .debian.org machine where it will default to the mirroradm people.
+#MAILTO="root"
+
+## How long to wait for mirrors to do stage1 if we have multi-stage syncing
+#PUSHDELAY=240
+
+## which path to push
+#MIRRORPATH="/org/packages.debian.org/mirror/"

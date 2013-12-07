@@ -1,0 +1,21 @@
+# Definition of mirror hosts we push.
+# One mirror per line, with the following fields defined.
+#
+# ShortName HostName User SSHProtocol SSHKeyFile
+#
+# ShortName will be used as a shorthand in logfile outputs and for the logfile
+# where every ssh output gets redirected to.
+#
+# If no SSHKeyFile is given, the default from the config file applies.
+# If SSHProtocol is empty, it will default to 2, but if you want to
+#                define a keyfile you HAVE TO set protocol too!
+#
+# Examples:
+#
+# piatti piatti.debian.org archvsync
+# One special value is allowed: DELAY
+# This word has to be on a line itself, followed by a space and a number.
+# nothing else, not even whitespace. It will trigger a pause of $number
+# seconds between the two mirrors. If no number is given it defaults to
+# 60 seconds.
+piatti piatti.debian.org archvsync
