@@ -24,7 +24,8 @@ set -u
 
 # In case the admin somehow wants to have this script located someplace else,
 # he can set BASEDIR, and we will take that. If it is unset we take ${HOME}
-BASEDIR=${BASEDIR:-"${HOME}"}
+BASEBINDIR=${BASEBINDIR:-"`pwd`"}
+BASEETCDIR=${BASEETCDIR:-"`pwd`/../etc"}
 
 NAME="$(basename $0)"
 
@@ -91,22 +92,22 @@ FROMFTPSYNC=${FROMFTPSYNC:-"false"}
 
 ########################################################################
 # Read our config file
-. "${BASEDIR}/etc/${NAME}.conf"
+. "${BASEETCDIR}/${NAME}.conf"
 
 # Source our common functions
-. "${BASEDIR}/etc/common"
+. "${BASEETCDIR}/common"
 
 # Set sane defaults if the configfile didn't do that for us.
 # The directory for our logfiles
-LOGDIR=${LOGDIR:-"${BASEDIR}/log"}
+LOGDIR=${LOGDIR:-"${HOME}/log"}
 # Our own logfile
 LOG=${LOG:-"${LOGDIR}/${NAME}.log"}
 # Our lockfile directory
-LOCKDIR=${LOCKDIR:-"${BASEDIR}/locks"}
+LOCKDIR=${LOCKDIR:-"${HOME}/locks"}
 # How many logfiles to keep
 LOGROTATE=${LOGROTATE:-14}
 # Our mirrorfile
-MIRRORS=${MIRRORS:-"${BASEDIR}/etc/${NAME}.mirror"}
+MIRRORS=${MIRRORS:-"${BASEETCDIR}/${NAME}.mirror"}
 # used by log()
 PROGRAM=${PROGRAM:-"${NAME}-$(hostname -s)"}
 # extra ssh options we might want hostwide
@@ -126,8 +127,8 @@ else
     MAILTO=${MAILTO:-"mirrorlogs@debian.org"}
 fi
 
-if ! [ -f "${BASEDIR}/${KEYFILE}" ]; then
-    error "SSH Key ${BASEDIR}/${KEYFILE} does not exist" >> "${LOG}"
+if ! [ -f "${HOME}/${KEYFILE}" ]; then
+    error "SSH Key ${HOME}/${KEYFILE} does not exist" >> "${LOG}"
     exit 5
 fi
 
@@ -139,7 +140,7 @@ HOOK3=${HOOK3:-""}
 ########################################################################
 
 # Some sane defaults
-cd "${BASEDIR}"
+cd "${BASEBINDIR}"
 umask 022
 
 # Make sure we have our log and lock directories
@@ -211,7 +212,7 @@ while read MTYPE MLNAME MHOSTNAME MUSER MSSHOPT; do
             # Yes we start with a -
             SSHOPT="${MSSHOPT}"
             MPROTO="99"
-            MKEYFILE="${BASEDIR}/${KEYFILE}"
+            MKEYFILE="${HOME}/${KEYFILE}"
         elif [ ${MSSHOPT:0:1} -eq 1 ] || [ ${MSSHOPT:0:1} -eq 2 ]; then
             # We do seem to have oldstyle options here.
             MPROTO=${MSSHOPT:0:1}
@@ -223,7 +224,7 @@ while read MTYPE MLNAME MHOSTNAME MUSER MSSHOPT; do
         fi
     else
         MPROTO=2
-        MKEYFILE="${BASEDIR}/${KEYFILE}"
+        MKEYFILE="${HOME}/${KEYFILE}"
         SSHOPT=""
     fi
 
