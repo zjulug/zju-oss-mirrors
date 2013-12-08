@@ -135,10 +135,11 @@ trap cleanup ERR TERM HUP INT QUIT
 
 # Start log by redirecting stdout and stderr there and closing stdin
 exec >"${LOGFILE}" 2>&1 <&-
-log "Mirrorsync start"
 
+log "Mirrorsync start"
 log "Running rsync: rsync ${SIMPLE_RSYNC_OPTIONS} ${SIMPLE_RSYNC_EXTRA} --exclude=${LOCKFILE} ${RSYNC_ADDR} ${REPODIR}"
-rsync ${SIMPLE_RSYNC_OPTIONS} ${SIMPLE_RSYNC_EXTRA} --exclude=${LOCKFILE} ${RSYNC_ADDR} ${REPODIR}
+
+rsync ${SIMPLE_RSYNC_OPTIONS} ${SIMPLE_RSYNC_EXTRA} --exclude=${LOCKFILE} ${RSYNC_ADDR} ${REPODIR} > "${LOGDIR}/rsync-${NAME}.log" 2> "${LOGDIR}/rsync-${NAME}.error"
 
 # All done, lets call cleanup
 cleanup
