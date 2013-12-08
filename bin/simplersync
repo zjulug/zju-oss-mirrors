@@ -54,7 +54,7 @@ ERRORSONLY=${ERRORSONLY:-"true"}
 FULLLOGS=${FULLLOGS:-"false"}
 
 SIMPLE_RSYNC_OPTIONS=${SIMPLE_RSYNC_OPTIONS:-"-avH --delete-after --delay-updates"}
-SIMPLE_RSYNC_EXTRA_OPTIONS=${SIMPLE_RSYNC_EXTRA_OPTIONS:-""}
+SIMPLE_RSYNC_EXTRA=${SIMPLE_RSYNC_EXTRA:-""}
 
 LOGDIR=${LOGDIR:-"${HOME}/log/${REPO}"}
 LOGFILE=${LOGFILE:-"${LOGDIR}/${NAME}.log"}
@@ -137,7 +137,7 @@ trap cleanup ERR TERM HUP INT QUIT
 exec >"${LOGFILE}" 2>&1 <&-
 log "Mirrorsync start"
 
-rsync ${SIMPLE_RSYNC_OPTIONS} ${SIMPLE_RSYNC_EXTRA_OPTIONS} --exclude=${LOCKFILE} ${RSYNC_ADDR} ${REPODIR}
+rsync ${SIMPLE_RSYNC_OPTIONS} ${SIMPLE_RSYNC_EXTRA} --exclude=${LOCKFILE} ${RSYNC_ADDR} ${REPODIR}
 
 # All done, lets call cleanup
 cleanup
