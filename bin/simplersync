@@ -1,5 +1,9 @@
 #! /bin/bash
 
+set -e
+set -u
+set -E
+
 # Simple rsync script with mail notification inspired by and derived from ftpsync.
 # Copyright (C) 2013  Hexcles Ma (http://blog.robotshell.org/)
 #
@@ -28,15 +32,23 @@ BASEDIR=${BASEDIR:-"${HOME}"}
 if [[ $1 = repo:* ]]; then
 	REPO=${1##repo:}
 else
-	echo "Usage: $0 repo:REPONAME"
+	echo "Usage: $0 repo:{REPONAME}"
 	exit 1
 fi
 
-# Default settings
+# Source the global config
+if [ -f "${BASEDIR}/etc/global.conf" ]; then
+	. "${BASEDIR}/etc/global.conf"
+fi
+
+# Per repo settings
+. "${BASEDIR}/etc/${REPO}.conf"
+
+# Default settings (avoid overriding)
 HOSTNAME=`hostname -f`
 LOGROTATE=${LOGROTATE:-14}
 MAILTO=${MAILTO:-"mirror"}
-NAME="$(basename $0)"
+NAME="$(basename $0)-${REPO}"
 PROGRAM=${PROGRAM:-"${NAME}-$(hostname -s)"}
 SIMPLE_RSYNC_OPTIONS=${SIMPLE_RSYNC_OPTIONS:-"-avH --delete-after --delay-updates"}
 SIMPLE_RSYNC_EXTRA_OPTIONS=${SIMPLE_RSYNC_EXTRA_OPTIONS:-""}
@@ -45,21 +57,11 @@ LOGDIR=${LOGDIR:-"${HOME}/log/${REPO}"}
 LOGFILE=${LOGFILE:-"${LOGDIR}/${NAME}.log"}
 
 REPODIR=${REPODIR:-"${HOME}/root/${REPO}"}
-LOCKFILE="${REPODIR}/Archive-Update-in-Progress-${HOSTNAME}"
+LOCKFILE=${LOCKFILE:-"${REPODIR}/Archive-Update-in-Progress-${HOSTNAME}"}
 
 # Import common functions (from ftpsync project)
 # Currently we only use log() savelog() error()
 . "${BASEDIR}/bin/common"
-
-# Override the settings
-
-# Source the global config
-if [ -f "${BASEDIR}/etc/global.conf" ]; then
-	. "${BASEDIR}/etc/global.conf"
-fi
-
-# Set remote repo address
-. "${BASEDIR}/etc/${REPO}.conf"
 
 # Did not specify remote repo address
 if [ -z "${RSYNC_ADDR}" ]; then
