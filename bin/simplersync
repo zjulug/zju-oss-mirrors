@@ -59,7 +59,7 @@ if [ -f "${BASEDIR}/etc/global.conf" ]; then
 fi
 
 # Set remote repo address
-. "${BASEDIR}/${REPO}.conf"
+. "${BASEDIR}/etc/${REPO}.conf"
 
 # Did not specify remote repo address
 if [ -z "${RSYNC_ADDR}" ]; then
