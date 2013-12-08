@@ -20,8 +20,7 @@
 # This script is designed to be used in the ZJU OSS Mirror site.
 # Thus it might not be very generic, with some hard-coding configurations.
 
-BASEBINDIR=${BASEBINDIR:-"`pwd`"}
-BASEETCDIR=${BASEETCDIR:-"`pwd`/../etc"}
+BASEDIR=${BASEDIR:-"${HOME}"}
 
 # Deal with command line parameters.
 # Currently we only accept one argument: "repo:*"
@@ -40,6 +39,7 @@ MAILTO=${MAILTO:-"mirror"}
 NAME="$(basename $0)"
 PROGRAM=${PROGRAM:-"${NAME}-$(hostname -s)"}
 SIMPLE_RSYNC_OPTIONS=${SIMPLE_RSYNC_OPTIONS:-"-avH --delete-after --delay-updates"}
+SIMPLE_RSYNC_EXTRA_OPTIONS=${SIMPLE_RSYNC_EXTRA_OPTIONS:-""}
 
 LOGDIR=${LOGDIR:-"${HOME}/log/${REPO}"}
 LOGFILE=${LOGFILE:-"${LOGDIR}/${NAME}.log"}
@@ -49,17 +49,17 @@ LOCKFILE="${REPODIR}/Archive-Update-in-Progress-${HOSTNAME}"
 
 # Import common functions (from ftpsync project)
 # Currently we only use log() savelog() error()
-. "${BASEBINDIR}/common"
+. "${BASEDIR}/bin/common"
 
 # Override the settings
 
 # Source the global config
-if [ -f "${BASEETCDIR}/global.conf" ]; then
-	. "${BASEETCDIR}/global.conf"
+if [ -f "${BASEDIR}/etc/global.conf" ]; then
+	. "${BASEDIR}/etc/global.conf"
 fi
 
 # Set remote repo address
-. "${BASEETCDIR}/${REPO}.conf"
+. "${BASEDIR}/${REPO}.conf"
 
 # Did not specify remote repo address
 if [ -z "${RSYNC_ADDR}" ]; then
@@ -132,7 +132,7 @@ trap cleanup ERR TERM HUP INT QUIT
 exec >"${LOGFILE}" 2>&1 <&-
 log "Mirrorsync start"
 
-rsync ${SIMPLE_RSYNC_OPTIONS} --exclude=${LOCKFILE} ${RSYNC_ADDR} ${REPODIR}
+rsync ${SIMPLE_RSYNC_OPTIONS} ${SIMPLE_RSYNC_EXTRA_OPTIONS} --exclude=${LOCKFILE} ${RSYNC_ADDR} ${REPODIR}
 
 # All done, lets call cleanup
 cleanup
