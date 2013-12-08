@@ -24,8 +24,7 @@ set -u
 
 # In case the admin somehow wants to have this script located someplace else,
 # he can set BASEDIR, and we will take that. If it is unset we take ${HOME}
-BASEBINDIR=${BASEBINDIR:-"`pwd`"}
-BASEETCDIR=${BASEETCDIR:-"`pwd`/../etc"}
+BASEDIR=${BASEDIR:-"${HOME}"}
 
 NAME="$(basename $0)"
 
@@ -91,23 +90,28 @@ PUSHKIND=${PUSHKIND:-"mhop"}
 FROMFTPSYNC=${FROMFTPSYNC:-"false"}
 
 ########################################################################
+# Read global config file
+if [ -f "${BASEDIR}/etc/global.conf" ]; then
+    . "${BASEDIR}/etc/global.conf"
+fi
+
 # Read our config file
-. "${BASEETCDIR}/${NAME}.conf"
+. "${BASEDIR}/etc/${NAME}.conf"
 
 # Source our common functions
-. "${BASEETCDIR}/common"
+. "${BASEDIR}/bin/common"
 
 # Set sane defaults if the configfile didn't do that for us.
 # The directory for our logfiles
-LOGDIR=${LOGDIR:-"${HOME}/log"}
+LOGDIR=${LOGDIR:-"${BASEDIR}/log"}
 # Our own logfile
 LOG=${LOG:-"${LOGDIR}/${NAME}.log"}
 # Our lockfile directory
-LOCKDIR=${LOCKDIR:-"${HOME}/locks"}
+LOCKDIR=${LOCKDIR:-"${BASEDIR}/locks"}
 # How many logfiles to keep
 LOGROTATE=${LOGROTATE:-14}
 # Our mirrorfile
-MIRRORS=${MIRRORS:-"${BASEETCDIR}/${NAME}.mirror"}
+MIRRORS=${MIRRORS:-"${BASEDIR}/etc/${NAME}.mirror"}
 # used by log()
 PROGRAM=${PROGRAM:-"${NAME}-$(hostname -s)"}
 # extra ssh options we might want hostwide

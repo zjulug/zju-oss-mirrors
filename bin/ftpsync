@@ -27,26 +27,11 @@ set -E
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-# Originally, Debian use a BASEDIR environment variable, which looks like:
-# BASEDIR/
-#	etc/
-#		ftpsync.conf
-#		...
-#	bin/
-#		ftpsync
-#		...
-#	README
-# However, we would like to combine all the syncing scripts together.
-# Thus our folder looks like:
-# bin/
-#	ftpsync		-- BASEBINDIR
-#	(other sync scripts)
-# etc/
-#	ftpsync.conf	-- BASEETCDIR
-#	(other configurations)
-
-BASEBINDIR=${BASEBINDIR:-"`pwd`"}
-BASEETCDIR=${BASEETCDIR:-"`pwd`/../etc"}
+# In case the admin somehow wants to have this script located someplace else,
+# he can set BASEDIR, and we will take that. If it is unset we take ${HOME}
+# How the admin sets this isn't our place to deal with. One could use a wrapper
+# for that. Or pam_env. Or whatever fits in the local setup. :)
+BASEDIR=${BASEDIR:-"${HOME}"}
 
 # Script version. DO NOT CHANGE, *unless* you change the master copy maintained
 # by Joerg Jaspert and the Debian mirroradm group.
@@ -54,7 +39,7 @@ BASEETCDIR=${BASEETCDIR:-"`pwd`/../etc"}
 VERSION="20130605"
 
 # Source our common functions
-. "${BASEBINDIR}/common"
+. "${BASEDIR}/bin/common"
 
 ########################################################################
 ########################################################################
@@ -220,15 +205,15 @@ if [ -n "${ARCHIVE}" ]; then
 fi
 
 # Source the global config
-if [ -f "${BASEETCDIR}/global.conf" ]; then
-	. "${BASEETCDIR}/global.conf"
+if [ -f "${BASEDIR}/etc/global.conf" ]; then
+	. "${BASEDIR}/etc/global.conf"
 fi
 
 # Now source the config for the archive we run on.
 # (Yes, people can also overwrite the options above in the config file
 # if they want to)
-if [ -f "${BASEETCDIR}/${NAME}.conf" ]; then
-    . "${BASEETCDIR}/${NAME}.conf"
+if [ -f "${BASEDIR}/etc/${NAME}.conf" ]; then
+    . "${BASEDIR}/etc/${NAME}.conf"
 else
     echo "Nono, you can't tell us about random archives. Bad boy!"
     exit 1
@@ -258,11 +243,11 @@ fi
 ########################################################################
 MIRRORNAME=${MIRRORNAME:-$(hostname -f)}
 # Where to put logfiles in
-LOGDIR=${LOGDIR:-"${HOME}/log"}
+LOGDIR=${LOGDIR:-"${BASEDIR}/log"}
 # Our own logfile
 LOG=${LOG:-"${LOGDIR}/${NAME}.log"}
 
-# Where should we put all the mirrored files?
+# Where should we put all the mirrored files? (should be overriden per archive!)
 TO=${TO:-"/srv/mirrors/debian/"}
 
 # used by log() and error()
@@ -353,7 +338,7 @@ unset RSYNC_OPTION_REGEX
 RSYNC_HOST=${RSYNC_HOST:-""}
 # Error out if we have no host to sync from
 if [ -z "${RSYNC_HOST}" ]; then
-    error "Missing a host to mirror from, please set RSYNC_HOST variable in ${BASEETCDIR}/${NAME}.conf"
+    error "Missing a host to mirror from, please set RSYNC_HOST variable in ${BASEDIR}/etc/${NAME}.conf"
 fi
 
 # our username for the rsync share
@@ -414,7 +399,7 @@ HUB=${HUB:-"false"}
 ########################################################################
 
 # Some sane defaults
-cd "${BASEBINDIR}"
+cd "${BASEDIR}"
 umask 022
 
 # If we are here for the first time, create the
@@ -651,7 +636,7 @@ if [ "xtruex" = "x${SYNCSTAGE2}x" ] || [ "xtruex" = "x${SYNCALL}x" ]; then
             fi
             ;;
         *)
-            error "Unsupported EXTENDEDTRACE value configured in ${BASEETCDIR}/${NAME}.conf, please fix"
+            error "Unsupported EXTENDEDTRACE value configured in ${BASEDIR}/etc/${NAME}.conf, please fix"
             ;;
     esac
 fi
@@ -738,7 +723,7 @@ if [ x${HUB} = "xtrue" ]; then
             RUNMIRRORARGS="${RUNMIRRORARGS} -k all"
         fi
         log "Trigger slave mirrors using ${RUNMIRRORARGS}"
-        ${BASEBINDIR}/runmirrors ${RUNMIRRORARGS}
+        ${BASEDIR}/bin/runmirrors ${RUNMIRRORARGS}
         log "Trigger slave done"
 
         HOOK=(
