@@ -35,3 +35,6 @@ PATH=/bin:/usr/bin:/usr/local/bin:/srv/mirrors/bin
  7 1,5,9,13,17,21 * * *	mirror ftpsync sync:archive:debian-backports
 43 1,5,9,13,17,21 * * *	mirror ftpsync sync:archive:debian
 23 3,9,15,21 * * *	mirror ftpsync sync:archive:debian-multimedia
+
+#CTAN
+43 5,11,17,23 * * *	mirror simplersync repo:ctan
