@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 MAILTO=mirror@localhost
-PATH=${HOME}/bin:${PATH}
+PATH=/bin:/usr/bin:/usr/local/bin:/srv/mirrors/bin
 
 # .---------------- minute (0 - 59)
 # |  .------------- hour (0 - 23)
