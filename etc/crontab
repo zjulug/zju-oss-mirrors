@@ -13,7 +13,7 @@ HOME=/home/mirror
 
 #Ubuntu
  7 */2 * * * mirror ${HOME}/bin/ftpsync sync:archive:ubuntu
- 0 1,13 * * * mirror ${HOME}/bin/ftpsync sync:archive:ubuntu-releases
+11 1,13 * * * mirror ${HOME}/bin/ftpsync sync:archive:ubuntu-releases
 
 #Fedora
 23 */2 * * * mirror ${HOME}/bin/simplersync repo:fedora
@@ -23,4 +23,16 @@ HOME=/home/mirror
  7 3,9,15,21 * * * mirror ${HOME}/bin/simplersync repo:centos
 
 #Deepin
-31 1,5,9,13,17,21 * * * mirror ${HOME}/bin/ftpsync sync:archive:deepin
+23 1,5,9,13,17,21 * * * mirror ${HOME}/bin/ftpsync sync:archive:deepin
+
+#Archlinux
+43 */2 * * * mirror ${HOME}/bin/simplersync repo:archlinux
+
+#Opensuse
+43 1,5,9,13,17,21 * * * mirror ${HOME}/bin/simplersync repo:opensuse
+
+#Debian
+ 7 */2 * * * mirror ${HOME}/bin/ftpsync sync:archive:debian-security
+ 7 1,5,9,13,17,21 * * * mirror ${HOME}/bin/ftpsync sync:archive:debian-backports
+43 1,5,9,13,17,21 * * * mirror ${HOME}/bin/ftpsync sync:archive:debian
+23 3,9,15,21 * * * mirror ${HOME}/bin/ftpsync sync:archive:debian-multimedia
