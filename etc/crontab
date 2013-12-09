@@ -10,3 +10,17 @@ HOME=/home/mirror
 # |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
 # |  |  |  |  |
 # *  *  *  *  * user-name command to be executed
+
+#Ubuntu
+ 7 */2 * * * mirror ${HOME}/bin/ftpsync sync:archive:ubuntu
+ 0 1,13 * * * mirror ${HOME}/bin/ftpsync sync:archive:ubuntu-releases
+
+#Fedora
+23 */2 * * * mirror ${HOME}/bin/simplersync repo:fedora
+ 7 1,5,9,13,17,21 * * * mirror ${HOME}/bin/simplersync repo:epel
+
+#CentOS
+ 7 3,9,15,21 * * * mirror ${HOME}/bin/simplersync repo:centos
+
+#Deepin
+31 1,5,9,13,17,21 * * * mirror ${HOME}/bin/ftpsync sync:archive:deepin
