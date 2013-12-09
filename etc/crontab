@@ -1,7 +1,6 @@
 SHELL=/bin/bash
-PATH=/bin:/usr/bin
-MAILTO=mirror
-HOME=/home/mirror
+MAILTO=mirror@localhost
+PATH=${HOME}/bin:${PATH}
 
 # .---------------- minute (0 - 59)
 # |  .------------- hour (0 - 23)
@@ -12,27 +11,27 @@ HOME=/home/mirror
 # *  *  *  *  * user-name command to be executed
 
 #Ubuntu
- 7 */2 * * * mirror ${HOME}/bin/ftpsync sync:archive:ubuntu
-11 1,13 * * * mirror ${HOME}/bin/ftpsync sync:archive:ubuntu-releases
+ 7 */2	* * * 		mirror ftpsync sync:archive:ubuntu
+11 1,13	* * * 		mirror ftpsync sync:archive:ubuntu-releases
 
 #Fedora
-23 */2 * * * mirror ${HOME}/bin/simplersync repo:fedora
- 7 1,5,9,13,17,21 * * * mirror ${HOME}/bin/simplersync repo:epel
+23 */2	* * * 		mirror simplersync repo:fedora
+ 7 1,5,9,13,17,21 * * *	mirror simplersync repo:epel
 
 #CentOS
- 7 3,9,15,21 * * * mirror ${HOME}/bin/simplersync repo:centos
+ 7 3,9,15,21 * * *	mirror simplersync repo:centos
 
 #Deepin
-23 1,5,9,13,17,21 * * * mirror ${HOME}/bin/ftpsync sync:archive:deepin
+23 1,5,9,13,17,21 * * *	mirror ftpsync sync:archive:deepin
 
 #Archlinux
-43 */2 * * * mirror ${HOME}/bin/simplersync repo:archlinux
+43 */2	* * *		mirror simplersync repo:archlinux
 
 #Opensuse
-43 1,5,9,13,17,21 * * * mirror ${HOME}/bin/simplersync repo:opensuse
+43 1,5,9,13,17,21 * * *	mirror simplersync repo:opensuse
 
 #Debian
- 7 */2 * * * mirror ${HOME}/bin/ftpsync sync:archive:debian-security
- 7 1,5,9,13,17,21 * * * mirror ${HOME}/bin/ftpsync sync:archive:debian-backports
-43 1,5,9,13,17,21 * * * mirror ${HOME}/bin/ftpsync sync:archive:debian
-23 3,9,15,21 * * * mirror ${HOME}/bin/ftpsync sync:archive:debian-multimedia
+ 7 */2	* * *		mirror ftpsync sync:archive:debian-security
+ 7 1,5,9,13,17,21 * * *	mirror ftpsync sync:archive:debian-backports
+43 1,5,9,13,17,21 * * *	mirror ftpsync sync:archive:debian
+23 3,9,15,21 * * *	mirror ftpsync sync:archive:debian-multimedia
