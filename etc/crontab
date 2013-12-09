@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 MAILTO=mirror@localhost
-PATH=/bin:/usr/bin:/usr/local/bin:/srv/mirrors/bin
+PATH=/bin:/usr/bin:/usr/local/bin:${HOME}/bin
 
 # .---------------- minute (0 - 59)
 # |  .------------- hour (0 - 23)
@@ -8,35 +8,35 @@ PATH=/bin:/usr/bin:/usr/local/bin:/srv/mirrors/bin
 # |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
 # |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
 # |  |  |  |  |
-# *  *  *  *  * user-name command to be executed
+# *  *  *  *  *		command to be executed
 
 #Ubuntu
- 7 */2	* * * 		mirror ftpsync sync:archive:ubuntu
-11 1,13	* * * 		mirror simplersync repo:ubuntu-releases
+ 7 */2	* * * 		ftpsync sync:archive:ubuntu
+11 1,13	* * * 		simplersync repo:ubuntu-releases
 
 #Fedora
-23 */2	* * * 		mirror simplersync repo:fedora
- 7 1,5,9,13,17,21 * * *	mirror simplersync repo:epel
+23 */2	* * * 		simplersync repo:fedora
+ 7 1,5,9,13,17,21 * * *	simplersync repo:epel
 
 #CentOS
- 7 3,9,15,21 * * *	mirror simplersync repo:centos
+ 7 3,9,15,21 * * *	simplersync repo:centos
 
 #Deepin
-23 1,5,9,13,17,21 * * *	mirror ftpsync sync:archive:deepin
-11 7,19	* * * 		mirror simplersync repo:deepin-cd
+23 1,5,9,13,17,21 * * *	ftpsync sync:archive:deepin
+11 7,19	* * * 		simplersync repo:deepin-cd
 
 #Archlinux
-43 */2	* * *		mirror simplersync repo:archlinux
+43 */2	* * *		simplersync repo:archlinux
 
 #Opensuse
-43 1,5,9,13,17,21 * * *	mirror simplersync repo:opensuse
+43 1,5,9,13,17,21 * * *	simplersync repo:opensuse
 
 #Debian
- 7 */2	* * *		mirror ftpsync sync:archive:debian-security
- 7 1,5,9,13,17,21 * * *	mirror ftpsync sync:archive:debian-backports
-43 1,5,9,13,17,21 * * *	mirror ftpsync sync:archive:debian
-23 3,9,15,21 * * *	mirror ftpsync sync:archive:debian-multimedia
-43 1,13	* * * 		mirror simplersync repo:debian-cd
+ 7 */2	* * *		ftpsync sync:archive:debian-security
+ 7 1,5,9,13,17,21 * * *	ftpsync sync:archive:debian-backports
+43 1,5,9,13,17,21 * * *	ftpsync sync:archive:debian
+23 3,9,15,21 * * *	ftpsync sync:archive:debian-multimedia
+43 1,13	* * * 		simplersync repo:debian-cd
 
 #CTAN
-43 5,11,17,23 * * *	mirror simplersync repo:ctan
+43 5,11,17,23 * * *	simplersync repo:ctan
