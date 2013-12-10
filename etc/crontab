@@ -40,3 +40,9 @@ PATH=/bin:/usr/bin:/usr/local/bin:/srv/mirrors/bin
 
 #CTAN
 43 5,11,17,23 * * *	simplersync repo:ctan
+
+#CPAN
+ 7 5,11,17,23 * * *	simplersync repo:cpan
+
+#Linuxmint
+43 3,7,11,15,19,23 * * *	ftpsync sync:archive:linuxmint
