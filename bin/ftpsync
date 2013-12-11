@@ -561,7 +561,7 @@ while [ -e "${UPDATEREQUIRED}" ]; do
                 sleep "${UIPSLEEP}"
                 result=0
             else
-                error "Update has been retried ${UPDATEREQUIRED} times, aborting"
+                error "Update has been retried ${UPDATE_RETRIES} times, aborting"
                 log "Perhaps upstream is still updating or there's a stale AUIP file"
                 result=1
             fi
