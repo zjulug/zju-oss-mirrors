@@ -11,7 +11,7 @@ PATH=/bin:/usr/bin:/usr/local/bin:/srv/mirrors/bin
 # *  *  *  *  *		command to be executed
 
 #Ubuntu
- 7 */2	* * * 		ftpsync sync:archive:ubuntu
+23 */2	* * * 		ftpsync sync:archive:ubuntu
 11 1,13	* * * 		simplersync repo:ubuntu-releases
 
 #Fedora
