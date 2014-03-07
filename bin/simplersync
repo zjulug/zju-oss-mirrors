@@ -150,7 +150,7 @@ trap cleanup ERR TERM HUP INT QUIT
 exec >"${LOGFILE}" 2>&1 <&-
 
 log "Mirrorsync start"
-log "Running rsync: rsync ${SIMPLE_RSYNC_OPTIONS} ${SIMPLE_RSYNC_EXTRA} --exclude=${LOCKFILE} ${RSYNC_ADDR} ${TO}"
+log "Running rsync: rsync ${SIMPLE_RSYNC_OPTIONS} ${SIMPLE_RSYNC_EXTRA} --exclude=${LOCKFILE} --exclude=.~tmp~/ ${RSYNC_ADDR} ${TO}"
 
 rsync ${SIMPLE_RSYNC_OPTIONS} ${SIMPLE_RSYNC_EXTRA} --exclude=${LOCKFILE} ${RSYNC_ADDR} ${TO} > "${LOGDIR}/rsync-${NAME}.log" 2> "${LOGDIR}/rsync-${NAME}.error"
 
