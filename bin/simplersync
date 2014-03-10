@@ -152,7 +152,7 @@ exec >"${LOGFILE}" 2>&1 <&-
 log "Mirrorsync start"
 log "Running rsync: rsync ${SIMPLE_RSYNC_OPTIONS} ${SIMPLE_RSYNC_EXTRA} --exclude=${LOCKFILE} --exclude=.~tmp~/ --exclude=.*.*.[[:alpha:]][[:alpha:]][[:alpha:]][[:alpha:]][[:alpha:]][[:alpha:]] ${RSYNC_ADDR} ${TO}"
 
-rsync ${SIMPLE_RSYNC_OPTIONS} ${SIMPLE_RSYNC_EXTRA} --exclude=${LOCKFILE} ${RSYNC_ADDR} ${TO} > "${LOGDIR}/rsync-${NAME}.log" 2> "${LOGDIR}/rsync-${NAME}.error"
+rsync ${SIMPLE_RSYNC_OPTIONS} ${SIMPLE_RSYNC_EXTRA} --exclude=${LOCKFILE} --exclude=.~tmp~/ --exclude=.*.*.[[:alpha:]][[:alpha:]][[:alpha:]][[:alpha:]][[:alpha:]][[:alpha:]] ${RSYNC_ADDR} ${TO} > "${LOGDIR}/rsync-${NAME}.log" 2> "${LOGDIR}/rsync-${NAME}.error"
 
 # All done, lets call cleanup
 cleanup
