@@ -49,3 +49,6 @@ PATH=/bin:/usr/bin:/usr/local/bin:/srv/mirrors/bin
 
 #Cygwin
  7 1,7,13,19 * * *	simplersync repo:cygwin
+
+#Raspbian
+ 7 4,10,16,22 * * *	simplersync repo:raspbian
