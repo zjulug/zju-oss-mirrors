@@ -1,4 +1,4 @@
-ZJU Mirrors Backend
+ZJU Mirrors Backend Scripts
 
 Copyright (C) 2012-2014 Ma Hongpu<bob1211@gmail.com>
 Copyright (C) 2014-2017 Shan Ting<vxst@vxst.org>
